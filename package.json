@@ -8,6 +8,8 @@
     "skills": ["./skills"]
   },
   "scripts": {
-    "check": "node --check browser-tools/start.js && node --check browser-tools/status.js && node --check browser-tools/nav.js && node --check browser-tools/eval.js && node --check browser-tools/screenshot.js && node --check browser-tools/dom.js && node --check browser-tools/click.js && node --check browser-tools/type.js && node --check browser-tools/wait.js && node --check browser-tools/pick.js && node --check browser-tools/cookies.js && node --check browser-tools/lib/cdp.js"
+    "check": "node --check browser-tools/start.js && node --check browser-tools/status.js && node --check browser-tools/nav.js && node --check browser-tools/eval.js && node --check browser-tools/screenshot.js && node --check browser-tools/dom.js && node --check browser-tools/click.js && node --check browser-tools/type.js && node --check browser-tools/wait.js && node --check browser-tools/pick.js && node --check browser-tools/cookies.js && node --check browser-tools/lib/cdp.js",
+    "test": "node --test tests/help.test.js",
+    "test:docker": "RUN_BROWSER_TOOLS_DOCKER_TESTS=1 node --test tests/browser-tools.docker.test.js"
   }
 }

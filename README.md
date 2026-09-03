@@ -172,6 +172,28 @@ Interactive element picker in the active tab. Click to select one element. Cmd/C
 
 Prints cookies as JSON. Default mode returns cookies for the active tab URL, including HTTP-only cookies available through CDP. `--all` returns all browser cookies.
 
+## Tests
+
+Fast structural/help tests:
+
+```bash
+npm test
+```
+
+Docker-backed Chrome integration test:
+
+```bash
+npm run test:docker
+```
+
+By default this uses `mcr.microsoft.com/playwright:v1.56.1-noble`. Override with:
+
+```bash
+BROWSER_TOOLS_TEST_IMAGE=your/chrome-image npm run test:docker
+```
+
+The Docker test starts headless Chrome in a container, exposes CDP through a local port, and verifies navigation, evaluation, DOM dump, type, click, wait, screenshot, and cookies.
+
 ## Local usage without a kit
 
 From this repo, run scripts by path:
