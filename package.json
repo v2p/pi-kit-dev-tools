@@ -1,0 +1,13 @@
+{
+  "name": "pi-kit-dev-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Small Bash-friendly browser/CDP utility tools inspired by Mario Zechner's article.",
+  "pi": {
+    "skills": ["./skills"]
+  },
+  "scripts": {
+    "check": "node --check browser-tools/start.js && node --check browser-tools/status.js && node --check browser-tools/nav.js && node --check browser-tools/eval.js && node --check browser-tools/screenshot.js && node --check browser-tools/dom.js && node --check browser-tools/click.js && node --check browser-tools/type.js && node --check browser-tools/wait.js && node --check browser-tools/pick.js && node --check browser-tools/cookies.js && node --check browser-tools/lib/cdp.js"
+  }
+}
