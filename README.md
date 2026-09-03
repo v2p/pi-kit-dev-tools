@@ -34,11 +34,22 @@ Recommended setup for reusable sandbox work:
 This repo includes a kit template and builder:
 
 ```bash
-./scripts/build-docker-kit.sh                 # writes dist/pi-browser-tools-kit
-sbx run pi . --kit ./dist/pi-browser-tools-kit
+./scripts/build-docker-kit.sh                 # writes dist/pi-browser-tools-kit in this repo
+sbx run pi . --kit ./dist/pi-browser-tools-kit # use from this repo only
 ```
 
-The generated kit injects scripts into the workspace under `./browser-tools/` and installs the Pi skill under `./.agents/skills/browser-tools/SKILL.md`.
+To attach the generated kit to another project, pass the kit by absolute path, or build it directly to a shared location:
+
+```bash
+# from this repo
+./scripts/build-docker-kit.sh /tmp/pi-browser-tools-kit
+
+# from another project
+sbx run pi . --kit /tmp/pi-browser-tools-kit
+# or: sbx run pi /path/to/other-project --kit /home/vova/Projects/pi-kit-dev-tools/dist/pi-browser-tools-kit
+```
+
+The generated kit injects scripts into the target workspace under `./browser-tools/` and installs the Pi skill under `./.agents/skills/browser-tools/SKILL.md`.
 
 The builder copies `browser-tools/lib/cdp.js` along with the scripts, so shared CDP helpers are present in the kit output.
 
