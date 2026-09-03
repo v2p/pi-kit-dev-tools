@@ -6,3 +6,6 @@
 
 # Browser tool runtime artifacts
 /.browser-tools/
+
+# Editor/project-local files
+/.idea/
