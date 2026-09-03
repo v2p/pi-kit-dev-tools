@@ -15,15 +15,5 @@ permissions:
 agentInstructions:
   content: |
     Browser Tools are available in the workspace at `./browser-tools/`.
-
-    Prefer Pi's `/skill:browser-tools` when available, or read the skill at:
+    For usage, load Pi skill `/skill:browser-tools` or read:
     `./.agents/skills/browser-tools/SKILL.md`.
-
-    Use the short scripts by path, for example:
-    `./browser-tools/status.js`, `./browser-tools/nav.js`,
-    `./browser-tools/eval.js`, `./browser-tools/dom.js`,
-    `./browser-tools/screenshot.js`, `./browser-tools/pick.js`.
-
-    In Docker Sandbox, use headless sandbox-local Chrome/Chromium when installed,
-    or connect to a visible host browser with:
-    `BROWSER_TOOLS_CDP_URL=http://host.docker.internal:9222`.

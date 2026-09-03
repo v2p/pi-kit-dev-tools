@@ -25,6 +25,20 @@ If no browser is connected:
 export BROWSER_TOOLS_CDP_URL=http://host.docker.internal:9222
 ```
 
+Host Chrome may bind CDP to host loopback only (`DevTools listening on ws://127.0.0.1:9222/...`). If `host.docker.internal:9222` fails, ask the user to either start Chrome with `--remote-debugging-address=0.0.0.0 --remote-allow-origins='*'`, or run a host-side forwarder:
+
+```bash
+socat TCP-LISTEN:9223,bind=0.0.0.0,reuseaddr,fork TCP:127.0.0.1:9222
+# then in sandbox:
+export BROWSER_TOOLS_CDP_URL=http://host.docker.internal:9223
+```
+
+If `socat` is unavailable, the user can run this host-side Node forwarder:
+
+```bash
+node -e 'const net=require("node:net"); net.createServer(c=>{const s=net.connect(9222,"127.0.0.1"); c.pipe(s); s.pipe(c); s.on("error",()=>c.destroy()); c.on("error",()=>s.destroy());}).listen(9223,"0.0.0.0")'
+```
+
 Most commands accept `--cdp http://host:9222` or `--port 9222`.
 
 ## Core Commands

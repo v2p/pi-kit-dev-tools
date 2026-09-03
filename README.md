@@ -67,7 +67,41 @@ export BROWSER_TOOLS_CDP_URL=http://host.docker.internal:9222
 ./browser-tools/pick.js "Select the product cards"
 ```
 
-If sandbox networking blocks the CDP endpoint or target sites, allow the needed host/ports/domains from the Docker Sandbox policy.
+If this fails, check what Chrome printed on startup. Recent Chrome builds often print a loopback-only CDP endpoint like:
+
+```text
+DevTools listening on ws://127.0.0.1:9222/devtools/browser/...
+```
+
+That endpoint is reachable from the host, but not necessarily from Docker Sandbox via `host.docker.internal`. Try starting Chrome with an explicit bind address:
+
+```bash
+google-chrome \
+  --remote-debugging-port=9222 \
+  --remote-debugging-address=0.0.0.0 \
+  --remote-allow-origins='*' \
+  --user-data-dir=/tmp/browser-tools-profile
+```
+
+If Chrome still binds CDP to `127.0.0.1`, expose it through a host-side TCP forwarder and use the forwarded port from the sandbox:
+
+```bash
+# Host terminal
+socat TCP-LISTEN:9223,bind=0.0.0.0,reuseaddr,fork TCP:127.0.0.1:9222
+
+# Sandbox/Pi terminal
+export BROWSER_TOOLS_CDP_URL=http://host.docker.internal:9223
+./browser-tools/status.js
+```
+
+If `socat` is unavailable, a Node.js forwarder works too:
+
+```bash
+# Host terminal
+node -e 'const net=require("node:net"); net.createServer(c=>{const s=net.connect(9222,"127.0.0.1"); c.pipe(s); s.pipe(c); s.on("error",()=>c.destroy()); c.on("error",()=>s.destroy());}).listen(9223,"0.0.0.0")'
+```
+
+Keep forwarded CDP ports local/trusted; CDP gives powerful control over the browser. If sandbox networking blocks the CDP endpoint or target sites, allow the needed host/ports/domains from the Docker Sandbox policy.
 
 Common connection options for most tools:
 
