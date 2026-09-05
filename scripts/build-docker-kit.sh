@@ -11,6 +11,8 @@ rm -rf "$out_dir"
 mkdir -p "$tool_dir/lib" "$skill_dir"
 
 cp "$repo_root/docker-kit/spec.yaml" "$out_dir/spec.yaml"
+cp "$repo_root/docker-kit/host.Makefile" "$out_dir/host.Makefile"
+cp -R "$repo_root/docker-kit/host" "$out_dir/host"
 for tool in "${tools[@]}"; do
   cp "$repo_root/browser-tools/$tool.js" "$tool_dir/$tool.js"
 done
@@ -21,5 +23,6 @@ cp "$repo_root/skills/browser-tools/SKILL.md" "$skill_dir/SKILL.md"
 for tool in "${tools[@]}"; do
   chmod +x "$tool_dir/$tool.js"
 done
+chmod +x "$out_dir/host/start-chrome-debug.sh" "$out_dir/host/cdp-relay.js"
 
 echo "$out_dir"

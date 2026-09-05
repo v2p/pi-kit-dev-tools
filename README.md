@@ -49,7 +49,9 @@ sbx run pi . --kit /tmp/pi-browser-tools-kit
 # or: sbx run pi /path/to/other-project --kit /home/vova/Projects/pi-kit-dev-tools/dist/pi-browser-tools-kit
 ```
 
-The generated kit injects scripts into the target workspace under `./browser-tools/` and installs the Pi skill under `./.agents/skills/browser-tools/SKILL.md`.
+The generated kit injects scripts into the target workspace under `./browser-tools/` and installs the Pi skill under `./.agents/skills/browser-tools/SKILL.md`. It also includes host-only helpers at the kit root (`host.Makefile` and `host/`) for starting a visible host Chrome with CDP enabled.
+
+Only files under the generated kit's `files/workspace/` directory are injected into a sandbox workspace. Kit-root files such as `host.Makefile` and `host/` stay on the Docker host and are meant to be run before or alongside `sbx run`.
 
 The builder copies `browser-tools/lib/cdp.js` along with the scripts, so shared CDP helpers are present in the kit output.
 
@@ -73,9 +75,33 @@ In Docker Sandbox, `start.js` passes `HTTP_PROXY`/`HTTPS_PROXY` to Chrome by def
 Start Chrome on the host with remote debugging, then point the sandbox tools at it:
 
 ```bash
+# Host terminal, from this repo:
+make -f docker-kit/host.Makefile chrome-debug
+# Or, after building a kit:
+make -f /path/to/pi-browser-tools-kit/host.Makefile chrome-debug
+
+# Sandbox/Pi terminal:
 export BROWSER_TOOLS_CDP_URL=http://host.docker.internal:9222
 ./browser-tools/status.js
 ./browser-tools/pick.js "Select the product cards"
+```
+
+The Makefile target defaults to `CHROME_DEBUG_PORT=9222`, `CHROME_DEBUG_ADDRESS=0.0.0.0`, and a throwaway profile at `/tmp/pi-browser-tools-chrome-profile`. Override `CHROME_BIN`, `CHROME_URL`, or `CHROME_EXTRA_FLAGS` as needed.
+
+Chrome may reject `host.docker.internal` CDP requests with `Host header is specified and is not an IP address or localhost`. In a second host terminal, run the Host-header rewriting relay (`host/cdp-relay.js`) and use its port from the sandbox:
+
+```bash
+# Host terminal:
+make -f docker-kit/host.Makefile cdp-relay
+
+# Sandbox/Pi terminal:
+export BROWSER_TOOLS_CDP_URL=http://host.docker.internal:9223
+```
+
+If Docker Sandbox policy blocks the relay, allow the host relay port from the host:
+
+```bash
+sbx policy allow network localhost:9223
 ```
 
 If this fails, check what Chrome printed on startup. Recent Chrome builds often print a loopback-only CDP endpoint like:
@@ -94,7 +120,7 @@ google-chrome \
   --user-data-dir=/tmp/browser-tools-profile
 ```
 
-If Chrome still binds CDP to `127.0.0.1`, expose it through a host-side TCP forwarder and use the forwarded port from the sandbox:
+If Chrome still binds CDP to `127.0.0.1`, prefer the Makefile relay above because it also rewrites Chrome's strict `Host` header. A plain TCP forwarder can work in environments where Chrome accepts the incoming host or where you connect by an allowed IP:
 
 ```bash
 # Host terminal
@@ -206,7 +232,9 @@ These are small convenience wrappers around CDP/page JavaScript so agents do not
 ./browser-tools/pick.js --json "Select the product cards"
 ```
 
-Interactive element picker in the active tab. Click to select one element. Cmd/Ctrl+Click adds multiple elements, Enter finishes, and Escape cancels. Best with a visible host browser.
+Interactive element picker for a visible browser, best with host Chrome connected through `BROWSER_TOOLS_CDP_URL`. The command waits until the user selects in the browser: move highlights elements, click selects one and finishes, Cmd/Ctrl+Click adds multiple elements, Enter finishes multi-selection, and Escape cancels with `null`.
+
+Agents should use `pick.js` only after telling the user that manual selection is required. Prefer `--json`; the returned element metadata includes `selector`, `text`, `href`, `rect`, and an `html` snippet. In headless/CI flows, use `dom.js`, `click.js`, `type.js`, and `wait.js` instead.
 
 ## Cookies
 

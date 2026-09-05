@@ -9,6 +9,7 @@ const jsonOnly = args.includes("--json");
 const timeout = Number(optionValue(args, "--timeout") ?? 5000);
 const rest = stripOption(stripOption(stripOption(stripOption(stripCdpOptions(args), "--json"), "--timeout", true), "--help"), "-h");
 const selector = rest[0];
+let inputEventId = 100_000_000;
 
 if (help || !selector || rest.length > 1 || !Number.isFinite(timeout)) {
 	console.log(`Usage: click.js <selector> [--timeout 5000] [--json] [--port 9222 | --cdp http://host:9222]\n\nClick the center of a visible element in the active tab. Useful in headless mode.`);
@@ -18,6 +19,7 @@ if (help || !selector || rest.length > 1 || !Number.isFinite(timeout)) {
 try {
 	await withActivePage(browserUrl, async (client) => {
 		await client.send("Runtime.enable");
+		await client.send("Page.bringToFront").catch(() => {});
 		const response = await client.send("Runtime.evaluate", {
 			expression: `(${findClickable.toString()})(${JSON.stringify({ selector, timeout })})`,
 			awaitPromise: true,
@@ -26,14 +28,38 @@ try {
 		});
 		if (response.exceptionDetails) throw new Error(response.exceptionDetails.exception?.description ?? response.exceptionDetails.text);
 		const info = response.result.value;
-		await client.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: info.center.x, y: info.center.y });
-		await client.send("Input.dispatchMouseEvent", { type: "mousePressed", x: info.center.x, y: info.center.y, button: "left", clickCount: 1 });
-		await client.send("Input.dispatchMouseEvent", { type: "mouseReleased", x: info.center.x, y: info.center.y, button: "left", clickCount: 1 });
-		if (jsonOnly) console.log(JSON.stringify(info, null, 2));
-		else printValue({ clicked: info.selector, text: info.text });
+		const eventTimeout = Math.min(Math.max(timeout, 1000), 5000);
+		fireInputEvent(client, { type: "mouseMoved", x: info.center.x, y: info.center.y });
+		const pressed = await sendInputEvent(client, { type: "mousePressed", x: info.center.x, y: info.center.y, button: "left", clickCount: 1 }, eventTimeout);
+		const released = await sendInputEvent(client, { type: "mouseReleased", x: info.center.x, y: info.center.y, button: "left", clickCount: 1 }, eventTimeout);
+		const acknowledged = pressed && released;
+		if (!acknowledged) console.error(`Warning: one or more mouse button events did not receive a CDP acknowledgement within ${eventTimeout}ms; the click may still have been delivered.`);
+		if (jsonOnly) console.log(JSON.stringify({ ...info, acknowledged }, null, 2));
+		else printValue({ clicked: info.selector, text: info.text, acknowledged });
 	});
 } catch (error) {
 	fail(error);
+}
+
+async function sendInputEvent(client, params, timeoutMs) {
+	try {
+		await Promise.race([
+			client.send("Input.dispatchMouseEvent", params),
+			new Promise((_, reject) => setTimeout(() => reject(new Error("Input.dispatchMouseEvent acknowledgement timed out")), timeoutMs)),
+		]);
+		return true;
+	} catch (error) {
+		if (error.message.includes("acknowledgement timed out")) return false;
+		throw error;
+	}
+}
+
+function fireInputEvent(client, params) {
+	client.ws.send(JSON.stringify({
+		id: inputEventId++,
+		method: "Input.dispatchMouseEvent",
+		params,
+	}));
 }
 
 function optionValue(argv, name) {
@@ -69,14 +95,12 @@ function findClickable({ selector, timeout }) {
 			const element = document.querySelector(selector);
 			if (element && visible(element)) {
 				element.scrollIntoView({ block: "center", inline: "center", behavior: "instant" });
-				requestAnimationFrame(() => {
-					const rect = element.getBoundingClientRect();
-					resolve({
-						selector: cssPath(element),
-						text: (element.innerText || element.textContent || "").trim().replace(/\s+/g, " ").slice(0, 240) || null,
-						center: { x: Math.round(rect.left + rect.width / 2), y: Math.round(rect.top + rect.height / 2) },
-						rect: { x: Math.round(rect.x), y: Math.round(rect.y), width: Math.round(rect.width), height: Math.round(rect.height) },
-					});
+				const rect = element.getBoundingClientRect();
+				resolve({
+					selector: cssPath(element),
+					text: (element.innerText || element.textContent || "").trim().replace(/\s+/g, " ").slice(0, 240) || null,
+					center: { x: Math.round(rect.left + rect.width / 2), y: Math.round(rect.top + rect.height / 2) },
+					rect: { x: Math.round(rect.x), y: Math.round(rect.y), width: Math.round(rect.width), height: Math.round(rect.height) },
 				});
 			} else if (Date.now() > deadline) {
 				reject(new Error(`Timed out waiting for visible selector: ${selector}`));
