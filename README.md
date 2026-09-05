@@ -83,7 +83,7 @@ make -f /path/to/pi-browser-tools-kit/host.Makefile chrome-debug
 # Sandbox/Pi terminal:
 export BROWSER_TOOLS_CDP_URL=http://host.docker.internal:9222
 ./browser-tools/status.js
-./browser-tools/pick.js "Select the product cards"
+./browser-tools/pick.js --json "Select the product cards"
 ```
 
 The Makefile target defaults to `CHROME_DEBUG_PORT=9222`, `CHROME_DEBUG_ADDRESS=0.0.0.0`, and a throwaway profile at `/tmp/pi-browser-tools-chrome-profile`. Override `CHROME_BIN`, `CHROME_URL`, or `CHROME_EXTRA_FLAGS` as needed.
@@ -232,9 +232,9 @@ These are small convenience wrappers around CDP/page JavaScript so agents do not
 ./browser-tools/pick.js --json "Select the product cards"
 ```
 
-Interactive element picker for a visible browser, best with host Chrome connected through `BROWSER_TOOLS_CDP_URL`. The command waits until the user selects in the browser: move highlights elements, click selects one and finishes, Cmd/Ctrl+Click adds multiple elements, Enter finishes multi-selection, and Escape cancels with `null`.
+Interactive element picker for a visible browser, best with host Chrome connected through `BROWSER_TOOLS_CDP_URL`. Without an explicit CDP option it auto-tries `BROWSER_TOOLS_CDP_URL`, `host.docker.internal:9223`, and `127.0.0.1:9222`. The command waits until the user selects in the browser: hover highlights elements and shows selector metadata, click picks one element, Cmd/Ctrl/Shift+Click or Space toggles multi-selection, arrow keys refine to parent/child/siblings, Backspace removes the last multi-selection, Enter or Done finishes, and Escape or Cancel returns `null`. Use `--timeout 60000`, `--timeout 60s`, or `--timeout 2m` to clean up automatically.
 
-Agents should use `pick.js` only after telling the user that manual selection is required. Prefer `--json`; the returned element metadata includes `selector`, `text`, `href`, `rect`, and an `html` snippet. In headless/CI flows, use `dom.js`, `click.js`, `type.js`, and `wait.js` instead.
+Agents should use `pick.js` only after telling the user that manual selection is required. Prefer `--json`; the returned element metadata includes `selector`, `selectorCount`, `selectorUnique`, `alternativeSelectors`, `xpath`, `text`, `href`, `rect`, `center`, page/frame info, and an `html` snippet. In headless/CI flows, use `dom.js`, `click.js`, `type.js`, and `wait.js` instead.
 
 ## Cookies
 

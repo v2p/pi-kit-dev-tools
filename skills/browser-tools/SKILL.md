@@ -68,7 +68,7 @@ Use `pick.js` only with a visible browser. Tell the user it will wait for their 
 ./browser-tools/pick.js --json "Select the checkout button"
 ```
 
-Controls: move highlights; click selects one and finishes; Cmd/Ctrl+Click adds multiple; Enter finishes multi-select; Escape returns `null`. Use returned `selector`, `text`, `href`, `rect`, or `html` for the next action. If the choice is ambiguous, ask the user to pick again.
+Without an explicit CDP option, `pick.js` auto-tries `BROWSER_TOOLS_CDP_URL`, `host.docker.internal:9223`, and `127.0.0.1:9222`. Controls: hover highlights and shows metadata; click picks one and finishes; Cmd/Ctrl/Shift+Click or Space toggles multi-selection; arrow keys refine parent/child/siblings; Backspace removes the last selection; Enter or Done finishes; Escape or Cancel returns `null`. Use returned `selector`, `selectorCount`/`selectorUnique`, `alternativeSelectors`, `xpath`, `text`, `href`, `rect`, `center`, `page`/`frame`, or `html` for the next action. If the choice is ambiguous, ask the user to refine with arrow keys or pick again.
 
 ## Output Guidance
 
