@@ -1,19 +1,34 @@
-schemaVersion: "2"
+# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
 kind: mixin
-name: pi-browser-tools
 displayName: Pi Browser Tools
 description: Minimal Bash/CDP browser utility scripts and Pi skill instructions.
 
-permissions:
-  network:
-    allow:
-      - host.docker.internal
-      - gateway.docker.internal
-      - localhost
-      - 127.0.0.1
+build: |
+  FROM scratch
+  COPY files/workspace/ /opt/pi-browser-tools/workspace/
 
-agentInstructions:
-  content: |
-    Browser Tools are available in the workspace at `./browser-tools/`.
-    For usage, load Pi skill `/skill:browser-tools` or read:
-    `./.agents/skills/browser-tools/SKILL.md`.
+capabilities:
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      runtime:
+        allow:
+          - host.docker.internal
+          - gateway.docker.internal
+          - localhost
+          - 127.0.0.1
+  - type: com.docker.sandbox/lifecycle@1
+    config:
+      install:
+        - command: |
+            set -eu
+            : "${WORKSPACE_DIR:?Workspace path is required}"
+            cp -R /opt/pi-browser-tools/workspace/. "$WORKSPACE_DIR/"
+          user: "1000"
+          env: [WORKSPACE_DIR]
+  - type: com.docker.sandbox/agent-context@1
+    config:
+      content: |
+        Browser Tools are available in the workspace at `./browser-tools/`.
+        For usage, load Pi skill `/skill:browser-tools` or read:
+        `./.agents/skills/browser-tools/SKILL.md`.

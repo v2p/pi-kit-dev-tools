@@ -35,7 +35,7 @@ This repo includes a kit template and builder:
 
 ```bash
 ./scripts/build-docker-kit.sh                 # writes dist/pi-browser-tools-kit in this repo
-sbx run pi . --kit ./dist/pi-browser-tools-kit # use from this repo only
+sbx run /path/to/v3-pi-kit . --kit ./dist/pi-browser-tools-kit # use from this repo only
 ```
 
 To attach the generated kit to another project, pass the kit by absolute path, or build it directly to a shared location:
@@ -45,13 +45,15 @@ To attach the generated kit to another project, pass the kit by absolute path, o
 ./scripts/build-docker-kit.sh /tmp/pi-browser-tools-kit
 
 # from another project
-sbx run pi . --kit /tmp/pi-browser-tools-kit
-# or: sbx run pi /path/to/other-project --kit /home/vova/Projects/pi-kit-dev-tools/dist/pi-browser-tools-kit
+sbx run /path/to/v3-pi-kit . --kit /tmp/pi-browser-tools-kit
+# or: sbx run /path/to/v3-pi-kit /path/to/other-project --kit /home/vova/Projects/pi-kit-dev-tools/dist/pi-browser-tools-kit
 ```
+
+The generated kit uses **schema v3** and requires Docker Sandboxes v0.45.0+ and a **v3 Pi workload** with Node.js 22+ and standard shell utilities. Replace `/path/to/v3-pi-kit` with your v3 workload path or image reference. V3 mixins cannot compose with v1/v2 workloads; a `pi` shortcut backed by a v2 kit will not work.
 
 The generated kit injects scripts into the target workspace under `./browser-tools/` and installs the Pi skill under `./.agents/skills/browser-tools/SKILL.md`. It also includes host-only helpers at the kit root (`host.Makefile` and `host/`) for starting a visible host Chrome with CDP enabled.
 
-Only files under the generated kit's `files/workspace/` directory are injected into a sandbox workspace. Kit-root files such as `host.Makefile` and `host/` stay on the Docker host and are meant to be run before or alongside `sbx run`.
+The v3 image build copies the generated kit's `files/workspace/` tree to `/opt/pi-browser-tools/workspace/`. A lifecycle install hook copies it into `$WORKSPACE_DIR` as the agent user during sandbox creation (including clone mode). Existing matching files are overwritten. This replaces v2's automatic workspace file injection. Kit-root files such as `host.Makefile` and `host/` stay on the Docker host and are meant to be run before or alongside `sbx run`.
 
 The builder copies `browser-tools/lib/cdp.js` along with the scripts, so shared CDP helpers are present in the kit output.
 
